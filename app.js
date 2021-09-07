@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(
   cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
-    origin: ["https://recipes-mm.netlify.app/*"],
+    origin: ["https://recipes-mm.netlify.app"],
     credentials: true,
   })
 );
