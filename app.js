@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(
   cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
-    origin: ["http://localhost:3000"],
+    origin: ["https://recipes-mm.netlify.app/"],
     credentials: true,
   })
 );
