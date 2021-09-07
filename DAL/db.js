@@ -1,10 +1,12 @@
 var mysql = require("mysql2");
 
+const config = require("./db.config");
+
 const pool = mysql.createPool({
-  user: "root",
-  host: "localhost",
-  password: "password",
-  database: "recipesapp",
+  user: config.USER,
+  host: config.HOST,
+  password: config.PASSWORD,
+  database: config.DB,
 });
 // now get a Promise wrapped instance of that pool
 const promisePool = pool.promise();
