@@ -164,9 +164,9 @@ router.delete("/recipe?:recipeId", async (req, res) => {
 router.get("/options", async (req, res) => {
   try {
     const result = await recipesAPI.getOptions();
-    res.status(200).json(result);
+    return res.status(200).json({ payload: result });
   } catch (e) {
-    res.status(401).json("Problem getting recipes options. Try again later");
+    return res.status(401).json({ message: "Problem getting recipes options. Try again later" });
   }
 });
 
