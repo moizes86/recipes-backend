@@ -6,7 +6,6 @@ const fs = require("fs");
 const { validationsAPI } = require("../DAL/validations");
 
 const multer = require("multer");
-const { debug } = require("console");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -39,7 +38,6 @@ const jsonifyData = (req, res, next) => {
       console.log(key + "is a string");
     }
   }
-
   next();
 };
 
@@ -48,7 +46,7 @@ const validateData = (req, res, next) => {
     try {
       if (validationsAPI[key]) validationsAPI[key](req.body[key]);
     } catch (err) {
-      return res.status(400).send(err.message);
+      return res.status(400).json(err.message);
     }
   }
   next();
@@ -87,10 +85,12 @@ const createRecipeInDB = async (req, res, next) => {
     await recipesAPI.addInstructions(newRecipeId, instructions);
     await recipesAPI.addDiets(newRecipeId, dietsSelected);
     await recipesAPI.addCategories(newRecipeId, categoriesSelected);
-    await recipesAPI.addImages(
-      newRecipeId,
-      req.files.map((file) => file.path)
-    );
+    if (req.files) {
+      await recipesAPI.addImages(
+        newRecipeId,
+        req.files.map((file) => file.path)
+      );
+    }
 
     req.insertId = newRecipeId;
   } catch (err) {
@@ -103,7 +103,7 @@ const createRecipeInDB = async (req, res, next) => {
 router.get("/", async (req, res) => {
   try {
     const [result] = await recipesAPI.getRecipes();
-    res.status(200).json(result);
+    res.status(200).json({ payload: result });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }
@@ -112,10 +112,14 @@ router.get("/", async (req, res) => {
 router.get("/search?:q", async (req, res) => {
   try {
     const { q } = req.query;
-    const [result] = await recipesAPI.getRecipesBySearch(q);
-    res.status(200).json(result);
+    const [recipes] = await recipesAPI.getRecipesBySearch(q);
+    recipes.forEach(async (recipe) => {
+      await recipesAPI.getImagesForRecipe(recipe.id);
+    });
+
+    return res.status(200).json({ payload: results });
   } catch (e) {
-    res.status(500).json({ err: e.message });
+    return res.status(400).json({ err: e.message });
   }
 });
 
@@ -128,7 +132,10 @@ router.get("/recipe?:recipeId", async (req, res) => {
     const dietsSelected = await recipesAPI.getDietsForRecipe(recipeId);
     const categoriesSelected = await recipesAPI.getCategoriesForRecipe(recipeId);
     const images = await recipesAPI.getImagesForRecipe(recipeId);
-    res.status(200).json({ ...recipe, ingredients, instructions, dietsSelected, categoriesSelected, images });
+
+    res
+      .status(200)
+      .json({ payload: { ...recipe, ingredients, instructions, dietsSelected, categoriesSelected, images } });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }
@@ -150,35 +157,16 @@ router.delete("/recipe?:recipeId", async (req, res) => {
 
     res.status(200).send("Recipe deleted");
   } catch (err) {
-    debugger;
     res.status(400).send("Problem deleting recipe");
   }
 });
 
-router.get("/measuring-units", async (req, res) => {
+router.get("/options", async (req, res) => {
   try {
-    const [result] = await recipesAPI.getMeasuringUnits();
+    const result = await recipesAPI.getOptions();
     res.status(200).json(result);
   } catch (e) {
-    res.status(500).json({ err: e.message });
-  }
-});
-
-router.get("/diets", async (req, res) => {
-  try {
-    const [result] = await recipesAPI.getDiets();
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(500).json({ err: e.message });
-  }
-});
-
-router.get("/categories", async (req, res) => {
-  try {
-    const [result] = await recipesAPI.getCategories();
-    res.status(200).json(result);
-  } catch (e) {
-    res.status(500).json({ err: e.message });
+    res.status(401).json("Problem getting recipes options. Try again later");
   }
 });
 
@@ -189,7 +177,7 @@ router.post(
   validateData,
   createRecipeInDB,
   (req, res) => {
-    res.status(200).send("Recipe uploaded");
+    res.status(200).json({ message: "Recipe uploaded", payload: req.insertId });
   }
 );
 
@@ -206,9 +194,9 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
     categoriesSelected,
     ingredients,
     instructions,
-    ingredientsDeleted,
-    instructionsDeleted,
-    urls,
+    ingredientsDeleted = [],
+    instructionsDeleted = [],
+    images,
   } = req.body;
 
   try {
@@ -232,17 +220,16 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
     await recipesAPI.addCategories(recipe_id, categoriesSelected);
 
     // Images
+    const imageUrlsToBeDeletedFromStorage = await recipesAPI.deleteImages(recipe_id, images);
+    imageUrlsToBeDeletedFromStorage.forEach((url) => fs.unlink(url, (err, result) => {}));
     if (req.files.length) {
-      await recipesAPI.deleteImages(recipe_id);
       await recipesAPI.addImages(
         recipe_id,
         req.files.map((file) => file.path)
       );
-
-      urls?.split(",").forEach((url) => fs.unlink(url, (err, result) => {}));
     }
 
-    res.status(200).send("OK");
+    res.status(200).json({ message: "Recipe Updated", payload: { recipe_id } });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }
@@ -252,7 +239,7 @@ router.get("/my-recipes?:id", async (req, res) => {
   const { userId } = req.query;
   try {
     const [result] = await recipesAPI.getMyRecipes(userId);
-    res.status(200).json(result);
+    res.status(200).json({ payload: result });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }

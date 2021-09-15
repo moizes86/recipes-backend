@@ -5,7 +5,6 @@ const logger = require("morgan");
 const cors = require("cors");
 const app = express();
 
-
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const recipesRouter = require("./routes/recipes");
@@ -15,7 +14,7 @@ app.use(express.json());
 app.use(
   cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
-    origin: ["https://recipes-mm.netlify.app"],
+    origin: ["http://localhost:3000", "https://recipes-mm.netlify.app"],
     credentials: true,
   })
 );
@@ -25,5 +24,9 @@ app.use(express.static(path.join(__dirname, "")));
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/recipes", recipesRouter);
+
+console.log()
+console.log(process.env)
+
 
 module.exports = app;
