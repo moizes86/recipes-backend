@@ -113,11 +113,8 @@ router.get("/search?:q", async (req, res) => {
   try {
     const { q } = req.query;
     const [recipes] = await recipesAPI.getRecipesBySearch(q);
-    recipes.forEach(async (recipe) => {
-      await recipesAPI.getImagesForRecipe(recipe.id);
-    });
 
-    return res.status(200).json({ payload: results });
+    return res.status(200).json({ payload: recipes });
   } catch (e) {
     return res.status(400).json({ err: e.message });
   }
@@ -229,7 +226,7 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
       );
     }
 
-    res.status(200).json({ message: "Recipe Updated", payload: { recipe_id } });
+    res.status(200).json({ message: "Recipe Updated", payload: { id:recipe_id,title } });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }
