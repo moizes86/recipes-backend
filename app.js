@@ -25,4 +25,6 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/recipes", recipesRouter);
 
+app.set("trust proxy", 1);
+
 module.exports = app;
