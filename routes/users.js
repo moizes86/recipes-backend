@@ -5,7 +5,6 @@ const { usersAPI } = require("../DAL/db");
 const { validateData } = require("../utils");
 const jwt = require("jsonwebtoken");
 
-
 /* GET users listing. */
 router.get("/", function (req, res, next) {
   res.send("respond with a resource");
@@ -34,19 +33,16 @@ router.post("/login", validateData, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const [user] = await usersAPI.login(email, password);
-    if (!user) {
-      throw Error("Email or password incorrect");
-    } else {
-      res.cookie("user", user);
-      return res.status(200).json({ message: "Login successful", payload: user });
-    }
+    const user = await usersAPI.login(email, password);
+    res.cookie("user", user);
+    return res.status(200).json({ message: "Login successful", payload: user });
+
   } catch (e) {
-    return res.status(401).json({ message: e.message });
+      return res.status(401).json({ message: e.message });
   }
 });
 
-router.post("/verify",validateData, async (req, res) => {
+router.post("/verify", validateData, async (req, res) => {
   try {
     await usersAPI.verify(req.body);
     const accessToken = jwt.sign({ email: req.body.email }, "verificationKey");

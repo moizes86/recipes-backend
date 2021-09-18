@@ -44,10 +44,15 @@ const usersAPI = {
 
   async login(email, password) {
     const [result] = await promisePool.execute("SELECT * FROM users WHERE email = ?;", [email]);
-    const match = await bcrypt.compare(password, result[0]["password"]);
+
+    if (!result.length) throw Error("Email or password incorrect");
+
+    const user = result[0];
+    const match = await bcrypt.compare(password, user.password);
     if (!match) throw Error("Incorrect password");
-    result[0].password = password;
-    return result;
+    if (!user.verified) throw Error("Unauthorized - please verify your account");
+    user.password = password;
+    return user;
   },
 
   async updateDetails(email, username, password) {
