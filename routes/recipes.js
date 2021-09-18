@@ -4,6 +4,7 @@ const { recipesAPI } = require("../DAL/db");
 const path = require("path");
 const fs = require("fs");
 const { validationsAPI } = require("../DAL/validations");
+const { validateData, jsonifyData } = require("../utils");
 
 const multer = require("multer");
 
@@ -30,28 +31,6 @@ const upload = multer({
   fileFilter: imageFilter,
 });
 
-const jsonifyData = (req, res, next) => {
-  for (const key in req.body) {
-    try {
-      req.body[key] = JSON.parse(req.body[key]);
-    } catch (e) {
-      console.log(key + "is a string");
-    }
-  }
-  next();
-};
-
-const validateData = (req, res, next) => {
-  for (const key in req.body) {
-    try {
-      if (validationsAPI[key]) validationsAPI[key](req.body[key]);
-    } catch (err) {
-      return res.status(400).json(err.message);
-    }
-  }
-  next();
-};
-
 const createRecipeInDB = async (req, res, next) => {
   try {
     let {
@@ -67,8 +46,7 @@ const createRecipeInDB = async (req, res, next) => {
       instructions,
     } = req.body;
 
-    const user_id = req.cookies.user[0].id;
-
+    const user_id = req.cookies.user.id;
     // Add to recipes table
     const [resultCreateRecipe] = await recipesAPI.createRecipe(
       user_id,
@@ -103,9 +81,9 @@ const createRecipeInDB = async (req, res, next) => {
 router.get("/", async (req, res) => {
   try {
     const [result] = await recipesAPI.getRecipes();
-    res.status(200).json({ payload: result });
+    return res.status(200).json({ payload: result });
   } catch (e) {
-    res.status(500).json({ err: e.message });
+    return res.status(500).json({ err: e.message });
   }
 });
 
@@ -174,7 +152,7 @@ router.post(
   validateData,
   createRecipeInDB,
   (req, res) => {
-    res.status(200).json({ message: "Recipe uploaded", payload: req.insertId });
+    res.status(200).json({ message: "Recipe uploaded", payload: {recipe_id: req.insertId} });
   }
 );
 
@@ -226,7 +204,7 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
       );
     }
 
-    res.status(200).json({ message: "Recipe Updated", payload: { id:recipe_id,title } });
+    res.status(200).json({ message: "Recipe Updated", payload: { id: recipe_id, title } });
   } catch (e) {
     res.status(500).json({ err: e.message });
   }

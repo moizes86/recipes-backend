@@ -1,27 +1,40 @@
 var mysql = require("mysql2");
 
 const config = require("./db.config");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
+
+async function generateHash(password) {
+  let hash = await new Promise((resolve, reject) => {
+    bcrypt.hash(password, saltRounds, async (err, hash) => {
+      if (err) reject(err);
+      resolve(hash);
+    });
+  });
+  return hash;
+}
 
 const pool = mysql.createPool({
-  user: config.USER,
-  host: config.HOST,
-  password: config.PASSWORD,
-  database: config.DB,
-  // user: "root",
-  // host: "localhost",
-  // password: "password",
-  // database: "recipesapp",
+  // user: config.USER,
+  // host: config.HOST,
+  // password: config.PASSWORD,
+  // database: config.DB,
+  user: "root",
+  host: "localhost",
+  password: "password",
+  database: "recipesapp",
 });
 // now get a Promise wrapped instance of that pool
 const promisePool = pool.promise();
 
 const usersAPI = {
   async signup(email, username, password) {
+    const hash = await generateHash(password);
     try {
-      return await promisePool.execute("INSERT INTO users (email, username, password ) VALUES (?,?,?);", [
+      return await promisePool.execute("INSERT INTO Users (email, username, password ) VALUES (?,?,?);", [
         email,
         username,
-        password,
+        hash,
       ]);
     } catch (e) {
       if (e.errno === 1062) throw Error("User already exists. Try different email address.");
@@ -30,26 +43,45 @@ const usersAPI = {
   },
 
   async login(email, password) {
+    const [result] = await promisePool.execute("SELECT * FROM users WHERE email = ?;", [email]);
+    const match = await bcrypt.compare(password, result[0]["password"]);
+    if (!match) throw Error("Incorrect password");
+    result[0].password = password;
+    return result;
+  },
+
+  async updateDetails(email, username, password) {
+    const hash = await generateHash(password);
     try {
-      return await promisePool.execute("SELECT * FROM users WHERE (email = ? AND password = ?);", [
+      return await promisePool.execute("UPDATE users SET username = ?, password= ? WHERE email = ?;", [
+        username,
+        hash,
         email,
-        password,
       ]);
     } catch (e) {
       return [e];
     }
   },
 
-  async updateDetails(email, username, password) {
+  async insertCode(email, code) {
     try {
-      return await promisePool.execute("UPDATE users SET username = ?, password= ? WHERE email = ?;", [
-        username,
-        password,
+      const result = promisePool.execute("Update Users SET Code = ? WHERE (email = ?);", [code, email]);
+      return { success: true, payload: "Updated" };
+    } catch (err) {
+      return { success: false, payload: "Something went wrong. Try again later" };
+    }
+  },
+
+  async verify({ email, code }) {
+    let [user] = await promisePool.execute("SELECT email, code FROM Users WHERE (email = ?)", [email]);
+    user = user[0];
+    if (user.code === +code) {
+      const result = await promisePool.execute("UPDATE Users SET verified = 1, code = 0 WHERE (email = ?)", [
         email,
       ]);
-    } catch (e) {
-      return [e];
+      return;
     }
+    throw Error("Verification failed - codes does not match");
   },
 };
 

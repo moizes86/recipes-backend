@@ -1,18 +1,16 @@
-const { LoginValidationError } = require("./Errors");
-
 const validationsAPI = {
   required(name, value) {
     if (!value) throw Error(`${name} is required`);
   },
 
-  user(cookie){
-    console.log(cookie)
+  user(cookie) {
+    console.log(cookie);
   },
-  
+
   email(email) {
     this.required("Email", email);
     const reg = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    if (!reg.test(email)) throw new LoginValidationError("Invalid Email");
+    if (!reg.test(email)) throw Error("Invalid Email");
   },
 
   username(username) {
@@ -28,8 +26,8 @@ const validationsAPI = {
   password(password) {
     this.required("Password", password);
     const reg = /^(?=.*[0-9])(?=.*[a-zA-Z]).{6,}$/;
-    if (password.length < 6) throw new LoginValidationError("Password length must be at least six chars");
-    if (!reg.test(password)) throw new LoginValidationError("Invalid password. Must contain numbers and letters");
+    if (password.length < 6) throw Error("Password length must be at least six chars");
+    if (!reg.test(password)) throw Error("Invalid password. Must contain numbers and letters");
   },
 
   confirmPassword(confirmPassword, password) {
@@ -46,10 +44,12 @@ const validationsAPI = {
     if (title.length > 45) throw Error("Title is too long! Maximum 45 chars");
   },
 
-  sourceUrl(sourceUrl) {
-    const reg =
-      /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
-    if (!reg.test(sourceUrl)) throw Error("Invalid source url");
+  source_url(sourceUrl) {
+    if (sourceUrl) {
+      const reg =
+        /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+      if (!reg.test(sourceUrl)) throw Error("Invalid source url");
+    }
   },
 
   servings(n) {
@@ -68,7 +68,7 @@ const validationsAPI = {
   ingredients(ingredients) {
     if (!ingredients.length) throw Error("Ingredients are required");
     ingredients.forEach((ingredient) => {
-      if (!ingredient.text || ingredient.amount <=0)  throw Error("Invalid ingredient");
+      if (!ingredient.text || ingredient.amount <= 0) throw Error("Invalid ingredient");
     });
   },
 
@@ -77,6 +77,10 @@ const validationsAPI = {
     instructions.forEach((instruction) => {
       if (!instruction) throw Error("Invalid instruction");
     });
+  },
+
+  code(code) {
+    if (!code) throw Error("Code is required");
   },
 };
 
