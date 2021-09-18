@@ -15,14 +15,14 @@ async function generateHash(password) {
 }
 
 const pool = mysql.createPool({
-  // user: config.USER,
-  // host: config.HOST,
-  // password: config.PASSWORD,
-  // database: config.DB,
-  user: "root",
-  host: "localhost",
-  password: "password",
-  database: "recipesapp",
+  user: config.USER,
+  host: config.HOST,
+  password: config.PASSWORD,
+  database: config.DB,
+  // user: "root",
+  // host: "localhost",
+  // password: "password",
+  // database: "recipesapp",
 });
 // now get a Promise wrapped instance of that pool
 const promisePool = pool.promise();
