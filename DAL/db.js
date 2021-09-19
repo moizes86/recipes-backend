@@ -15,14 +15,14 @@ async function generateHash(password) {
 }
 
 const pool = mysql.createPool({
-  user: config.USER,
-  host: config.HOST,
-  password: config.PASSWORD,
-  database: config.DB,
-  // user: "root",
-  // host: "localhost",
-  // password: "password",
-  // database: "recipesapp",
+  // user: config.USER,
+  // host: config.HOST,
+  // password: config.PASSWORD,
+  // database: config.DB,
+  user: "root",
+  host: "localhost",
+  password: "password",
+  database: "recipesapp",
 });
 // now get a Promise wrapped instance of that pool
 const promisePool = pool.promise();
@@ -238,15 +238,17 @@ const recipesAPI = {
     return result;
   },
 
-  async createRecipe(user_id, title, description, source = "", source_url = "", servings = "", cook = "") {
+  async createRecipe(email, title, description, source = "", source_url = "", servings = "", cook = "") {
     try {
       return ([result] = await promisePool.execute(
         "INSERT INTO recipes \
-        (user_id, title, description, source, source_url, servings, cook)\
+        (email, title, description, source, source_url, servings, cook)\
         VALUES (?, ?, ?, ?, ?, ?, ?);",
-        [user_id, title, description, source, source_url, servings, cook]
+        [email, title, description, source, source_url, servings, cook]
       ));
     } catch (e) {
+      debugger;
+
       return e;
     }
   },

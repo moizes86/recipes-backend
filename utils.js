@@ -47,6 +47,7 @@ const verifyWithJwt = (req, res, next) => {
   }
 };
 
+
 module.exports = {
   validateData,
   jsonifyData,

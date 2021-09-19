@@ -4,7 +4,7 @@ const { recipesAPI } = require("../DAL/db");
 const path = require("path");
 const fs = require("fs");
 const { validationsAPI } = require("../DAL/validations");
-const { validateData, jsonifyData } = require("../utils");
+const { validateData, jsonifyData, verifyWithJwt } = require("../utils");
 
 const multer = require("multer");
 
@@ -34,6 +34,7 @@ const upload = multer({
 const createRecipeInDB = async (req, res, next) => {
   try {
     let {
+      email,
       title,
       description,
       source,
@@ -46,10 +47,10 @@ const createRecipeInDB = async (req, res, next) => {
       instructions,
     } = req.body;
 
-    const user_id = req.cookies.user.id;
+    // const user_id = req.cookies.user.id;
     // Add to recipes table
     const [resultCreateRecipe] = await recipesAPI.createRecipe(
-      user_id,
+      email,
       title,
       description,
       source,
@@ -116,23 +117,13 @@ router.get("/recipe?:recipeId", async (req, res) => {
   }
 });
 
-router.delete("/recipe?:recipeId", async (req, res) => {
+router.get("/my-recipes?:id", async (req, res) => {
+  const { userId } = req.query;
   try {
-    const { recipeId } = req.query;
-
-    //returns image urls
-    const imageUrls = await recipesAPI.deleteRecipe(+recipeId);
-    imageUrls[0]
-      .map((el) => el.url)
-      .forEach((url) =>
-        fs.unlink(url, (err, result) => {
-          if (err) return err;
-        })
-      );
-
-    res.status(200).send("Recipe deleted");
-  } catch (err) {
-    res.status(400).send("Problem deleting recipe");
+    const [result] = await recipesAPI.getMyRecipes(userId);
+    res.status(200).json({ payload: result });
+  } catch (e) {
+    res.status(500).json({ err: e.message });
   }
 });
 
@@ -145,9 +136,13 @@ router.get("/options", async (req, res) => {
   }
 });
 
+
+
+
 router.post(
   "/add-recipe",
   upload.array("images"),
+  verifyWithJwt,
   jsonifyData,
   validateData,
   createRecipeInDB,
@@ -210,14 +205,27 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
   }
 });
 
-router.get("/my-recipes?:id", async (req, res) => {
-  const { userId } = req.query;
+
+
+router.delete("/recipe?:recipeId", async (req, res) => {
   try {
-    const [result] = await recipesAPI.getMyRecipes(userId);
-    res.status(200).json({ payload: result });
-  } catch (e) {
-    res.status(500).json({ err: e.message });
+    const { recipeId } = req.query;
+
+    //returns image urls
+    const imageUrls = await recipesAPI.deleteRecipe(+recipeId);
+    imageUrls[0]
+      .map((el) => el.url)
+      .forEach((url) =>
+        fs.unlink(url, (err, result) => {
+          if (err) return err;
+        })
+      );
+
+    res.status(200).send("Recipe deleted");
+  } catch (err) {
+    res.status(400).send("Problem deleting recipe");
   }
 });
+
 
 module.exports = router;
