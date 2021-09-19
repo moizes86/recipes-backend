@@ -1,6 +1,5 @@
 var mysql = require("mysql2");
 
-const config = require("./db.config");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
@@ -15,14 +14,10 @@ async function generateHash(password) {
 }
 
 const pool = mysql.createPool({
-  // user: config.USER,
-  // host: config.HOST,
-  // password: config.PASSWORD,
-  // database: config.DB,
-  user: "root",
-  host: "localhost",
-  password: "password",
-  database: "recipesapp",
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASS,
+  database: process.env.DB,
 });
 // now get a Promise wrapped instance of that pool
 const promisePool = pool.promise();
