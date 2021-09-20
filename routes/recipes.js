@@ -117,10 +117,10 @@ router.get("/recipe?:recipeId", async (req, res) => {
   }
 });
 
-router.get("/my-recipes?:id", async (req, res) => {
-  const { userId } = req.query;
+router.get("/my-recipes?:email", async (req, res) => {
+  const { email } = req.query;
   try {
-    const [result] = await recipesAPI.getMyRecipes(userId);
+    const [result] = await recipesAPI.getMyRecipes(email);
     res.status(200).json({ payload: result });
   } catch (e) {
     res.status(500).json({ err: e.message });

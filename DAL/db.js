@@ -434,7 +434,7 @@ const recipesAPI = {
     }
   },
 
-  async getMyRecipes(id) {
+  async getMyRecipes(email) {
     try {
       return ([result] = await promisePool.execute(
         `
@@ -442,11 +442,12 @@ const recipesAPI = {
         i.url urls
         FROM recipes r LEFT JOIN images i
         ON i.recipe_id = r.id
-        Where r.user_id = ?
+        Where r.email = ?
         GROUP BY r.id;`,
-        [id]
+        [email]
       ));
     } catch (e) {
+      debugger
       return e;
     }
   },
