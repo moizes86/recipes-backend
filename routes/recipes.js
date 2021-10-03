@@ -136,9 +136,6 @@ router.get("/options", async (req, res) => {
   }
 });
 
-
-
-
 router.post(
   "/add-recipe",
   upload.array("images"),
@@ -147,7 +144,9 @@ router.post(
   validateData,
   createRecipeInDB,
   (req, res) => {
-    res.status(200).json({ message: "Recipe uploaded", payload: {recipe_id: req.insertId} });
+    res
+      .status(200)
+      .json({ message: "Recipe uploaded", payload: { id: req.insertId, title: req.body.title } });
   }
 );
 
@@ -205,8 +204,6 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
   }
 });
 
-
-
 router.delete("/recipe?:recipeId", async (req, res) => {
   try {
     const { recipeId } = req.query;
@@ -226,6 +223,5 @@ router.delete("/recipe?:recipeId", async (req, res) => {
     res.status(400).send("Problem deleting recipe");
   }
 });
-
 
 module.exports = router;

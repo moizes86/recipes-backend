@@ -97,6 +97,7 @@ const recipesAPI = {
         GROUP BY r.id
         ;`
       );
+      result[0].urls = result[0].urls.split(",");
 
       return [result];
     } catch (e) {
@@ -447,7 +448,7 @@ const recipesAPI = {
         [email]
       ));
     } catch (e) {
-      debugger
+      debugger;
       return e;
     }
   },
