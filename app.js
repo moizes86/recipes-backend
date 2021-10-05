@@ -5,7 +5,6 @@ const session = require("express-session");
 const logger = require("morgan");
 const cors = require("cors");
 const app = express();
-
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const recipesRouter = require("./routes/recipes");
@@ -39,5 +38,4 @@ app.use("/users", usersRouter);
 app.use("/recipes", recipesRouter);
 
 app.set("trust proxy", 1);
-
 module.exports = app;

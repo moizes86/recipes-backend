@@ -1,83 +1,12 @@
 var express = require("express");
+
 var router = express.Router();
 const { recipesAPI } = require("../DAL/db");
 const path = require("path");
 const fs = require("fs");
-const { validationsAPI } = require("../DAL/validations");
 const { validateData, jsonifyData, verifyWithJwt } = require("../utils");
-
-const multer = require("multer");
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/images");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "_" + file.originalname);
-  },
-});
-
-const imageFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image")) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1024 * 1024 * 5 },
-  fileFilter: imageFilter,
-});
-
-const createRecipeInDB = async (req, res, next) => {
-  try {
-    let {
-      email,
-      title,
-      description,
-      source,
-      source_url,
-      servings,
-      cook,
-      dietsSelected,
-      categoriesSelected,
-      ingredients,
-      instructions,
-    } = req.body;
-
-    // const user_id = req.cookies.user.id;
-    // Add to recipes table
-    const [resultCreateRecipe] = await recipesAPI.createRecipe(
-      email,
-      title,
-      description,
-      source,
-      source_url,
-      servings,
-      cook
-    );
-
-    const newRecipeId = resultCreateRecipe.insertId;
-    await recipesAPI.addIngredients(newRecipeId, ingredients);
-    await recipesAPI.addInstructions(newRecipeId, instructions);
-    await recipesAPI.addDiets(newRecipeId, dietsSelected);
-    await recipesAPI.addCategories(newRecipeId, categoriesSelected);
-    if (req.files) {
-      await recipesAPI.addImages(
-        newRecipeId,
-        req.files.map((file) => file.path)
-      );
-    }
-
-    req.insertId = newRecipeId;
-  } catch (err) {
-    return res.status(400).send(err.message);
-  }
-
-  next();
-};
+const { uploadFile, getFileStream } = require("../s3");
+const { upload } = require("../multer");
 
 router.get("/", async (req, res) => {
   try {
@@ -142,11 +71,62 @@ router.post(
   verifyWithJwt,
   jsonifyData,
   validateData,
-  createRecipeInDB,
-  (req, res) => {
-    res
-      .status(200)
-      .json({ message: "Recipe uploaded", payload: { id: req.insertId, title: req.body.title } });
+  async (req, res) => {
+    try {
+      let {
+        email,
+        title,
+        description,
+        source,
+        source_url,
+        servings,
+        cook,
+        dietsSelected,
+        categoriesSelected,
+        ingredients,
+        instructions,
+      } = req.body;
+
+      // const user_id = req.cookies.user.id;
+      // Add to recipes table
+      const [resultCreateRecipe] = await recipesAPI.createRecipe(
+        email,
+        title,
+        description,
+        source,
+        source_url,
+        servings,
+        cook
+      );
+
+      const newRecipeId = resultCreateRecipe.insertId;
+      await recipesAPI.addIngredients(newRecipeId, ingredients);
+      await recipesAPI.addInstructions(newRecipeId, instructions);
+      await recipesAPI.addDiets(newRecipeId, dietsSelected);
+      await recipesAPI.addCategories(newRecipeId, categoriesSelected);
+
+      if (req.files) {
+        // save to aws s3
+        const awsFilesData = [];
+        for (const file of req.files) {
+          const result = await uploadFile(file);
+          awsFilesData.push(result);
+        }
+
+        const awsImagesURLs = awsFilesData.map((file) => file.key);
+        const devModeImagesURLs = req.files.map((file) => 'http://localhost:3100/'+file.path);
+
+        await recipesAPI.addImages(
+          newRecipeId,
+          process.env.NODE_ENV === "development" ? devModeImagesURLs : awsImagesURLs
+        );
+      }
+      res
+        .status(200)
+        .json({ message: "Recipe uploaded", payload: { id: newRecipeId, title: req.body.title } });
+    } catch (err) {
+      return res.status(400).send(err.message);
+    }
   }
 );
 
@@ -223,5 +203,12 @@ router.delete("/recipe?:recipeId", async (req, res) => {
     res.status(400).send("Problem deleting recipe");
   }
 });
+
+router.get('/images/:key', (req,res)=> {
+  const key= req.params.key;
+  const readStream = getFileStream(key);
+  readStream.pipe(res);
+
+})
 
 module.exports = router;
