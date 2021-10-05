@@ -88,7 +88,7 @@ const usersAPI = {
 const recipesAPI = {
   async getRecipes() {
     try {
-      const [result] = await promisePool.execute(
+      const [recipes] = await promisePool.execute(
         `
         SELECT r.*,
         GROUP_CONCAT(i.url ORDER BY i.id) urls
@@ -97,9 +97,13 @@ const recipesAPI = {
         GROUP BY r.id
         ;`
       );
-      if (result.length && result.urls) result[0].urls = result[0].urls.split(",");
+      if (recipes.length) {
+        recipes.forEach((recipe) => {
+          if (recipe.urls) recipe.urls = recipe.urls.split(",");
+        });
+      }
 
-      return [result];
+      return [recipes];
     } catch (e) {
       return e;
     }

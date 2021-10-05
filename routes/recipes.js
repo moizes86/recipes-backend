@@ -5,7 +5,7 @@ const { recipesAPI } = require("../DAL/db");
 const path = require("path");
 const fs = require("fs");
 const { validateData, jsonifyData, verifyWithJwt } = require("../utils");
-const { uploadFile, getFileStream } = require("../s3");
+const { uploadFile, getFileStream, deleteFile } = require("../s3");
 const { upload } = require("../multer");
 
 router.get("/", async (req, res) => {
@@ -173,12 +173,24 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
     await recipesAPI.addCategories(recipe_id, categoriesSelected);
 
     // Images
-    const imageUrlsToBeDeletedFromStorage = await recipesAPI.deleteImages(recipe_id, images);
-    imageUrlsToBeDeletedFromStorage.forEach((url) => fs.unlink(url, (err, result) => {}));
+    const imageUrlsToBeDeleted = await recipesAPI.deleteImages(recipe_id, images);
+    // imageUrlsToBeDeleted.forEach((url) => fs.unlink("public/images/" + url, (err, result) => {}));
+    for (const url of imageUrlsToBeDeleted) {
+      fs.unlink("public/images/" + url, (err, result) => {});
+      deleteFile(url);
+    }
+
     if (req.files.length) {
+      const awsFilesData = [];
+      for (const file of req.files) {
+        const result = await uploadFile(file);
+        awsFilesData.push(result);
+      }
+      const awsImagesURLs = awsFilesData.map((file) => file.key);
+      const devModeImagesURLs = req.files.map((file) => "http://localhost:3100/" + file.path);
       await recipesAPI.addImages(
         recipe_id,
-        req.files.map((file) => file.path)
+        process.env.NODE_ENV === "development" ? devModeImagesURLs : awsImagesURLs
       );
     }
 
@@ -196,11 +208,12 @@ router.delete("/recipe?:recipeId", async (req, res) => {
     const imageUrls = await recipesAPI.deleteRecipe(+recipeId);
     imageUrls[0]
       .map((el) => el.url)
-      .forEach((url) =>
-        fs.unlink(url, (err, result) => {
+      .forEach((url) => {
+        fs.unlink("public/images/" + url, (err, result) => {
           if (err) return err;
-        })
-      );
+        });
+        deleteFile(url);
+      });
 
     res.status(200).send("Recipe deleted");
   } catch (err) {
