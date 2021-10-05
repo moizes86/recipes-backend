@@ -107,19 +107,23 @@ router.post(
 
       if (req.files) {
         // save to aws s3
-        const awsFilesData = [];
-        for (const file of req.files) {
-          const result = await uploadFile(file);
-          awsFilesData.push(result);
+        try {
+          const awsFilesData = [];
+          for (const file of req.files) {
+            const result = await uploadFile(file);
+            awsFilesData.push(result);
+          }
+
+          const awsImagesURLs = awsFilesData.map((file) => file.key);
+          const devModeImagesURLs = req.files.map((file) => "http://localhost:3100/" + file.path);
+
+          await recipesAPI.addImages(
+            newRecipeId,
+            process.env.NODE_ENV === "development" ? devModeImagesURLs : awsImagesURLs
+          );
+        } catch (err) {
+          return res.status(400).json("Error saving images");
         }
-
-        const awsImagesURLs = awsFilesData.map((file) => file.key);
-        const devModeImagesURLs = req.files.map((file) => 'http://localhost:3100/'+file.path);
-
-        await recipesAPI.addImages(
-          newRecipeId,
-          process.env.NODE_ENV === "development" ? devModeImagesURLs : awsImagesURLs
-        );
       }
       res
         .status(200)
@@ -204,11 +208,10 @@ router.delete("/recipe?:recipeId", async (req, res) => {
   }
 });
 
-router.get('/images/:key', (req,res)=> {
-  const key= req.params.key;
+router.get("/images/:key", (req, res) => {
+  const key = req.params.key;
   const readStream = getFileStream(key);
   readStream.pipe(res);
-
-})
+});
 
 module.exports = router;
