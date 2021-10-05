@@ -97,7 +97,7 @@ const recipesAPI = {
         GROUP BY r.id
         ;`
       );
-      if (result.length) result[0].urls = result[0].urls.split(",");
+      if (result.length && result.urls) result[0].urls = result[0].urls.split(",");
 
       return [result];
     } catch (e) {
