@@ -26,12 +26,12 @@ app.use(
     secret: "secret",
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      expires: 1000 * 60,
-      sameSite: "none",
-      httpOnly: true,
-      secure: true,
-    },
+    // cookie: {
+    //   expires: 1000 * 60,
+    //   sameSite: "none",
+    //   httpOnly: true,
+    //   secure: true,
+    // },
   })
 );
 app.use(express.urlencoded({ extended: true }));
