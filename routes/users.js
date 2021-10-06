@@ -34,20 +34,16 @@ router.post("/login", validateData, async (req, res) => {
     const { email, password } = req.body;
 
     const user = await usersAPI.login(email, password);
-    const accessToken = jwt.sign({ email}, "verificationKey");
-    try{
-      debugger
-      res.cookie("user", user, { sameSite:'none', httpOnly: true, secure: true });
-
-    }catch(err){
-      debugger
-      console.log(err)
+    const accessToken = jwt.sign({ email }, "verificationKey");
+    try {
+      res.cookie("user", user, { httpOnly: true, sameSite: "none" });
+    } catch (err) {
+      console.log(err);
     }
 
     return res.status(200).json({ message: "Login successful", payload: user, accessToken });
-
   } catch (e) {
-      return res.status(401).json({ message: e.message });
+    return res.status(401).json({ message: e.message });
   }
 });
 
@@ -82,6 +78,5 @@ router.put("/update-details", validateData, async (req, res) => {
     res.status(500).json({ err: e.message });
   }
 });
-
 
 module.exports = router;
