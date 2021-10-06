@@ -35,7 +35,7 @@ router.post("/login", validateData, async (req, res) => {
 
     const user = await usersAPI.login(email, password);
     const accessToken = jwt.sign({ email: req.body.email }, "verificationKey");
-    res.cookie("user", user, { expires: 1000 * 60, sameSite: "none", httpOnly: true, secure: true });
+    res.cookie("user", user, { sameSite: "none", httpOnly: true, secure: true });
 
     return res.status(200).json({ message: "Login successful", payload: user, accessToken });
 
