@@ -28,6 +28,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       expires: 1000 * 60,
+      sameSite: "none",
+      httpOnly: true,
+      secure: true,
     },
   })
 );
