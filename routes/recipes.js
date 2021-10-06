@@ -115,14 +115,8 @@ router.post(
           }
 
           const awsImagesURLs = awsFilesData.map((file) => file.key);
-          console.log('awsImagesURLs');
-          console.log(awsImagesURLs);
 
           const devModeImagesURLs = req.files.map((file) => "http://localhost:3100/" + file.path);
-          console.log(devModeImagesURLs);
-          console.log('devModeImagesURLs');
-
-          console.log('ADD IMAGES START');
 
           await recipesAPI.addImages(
             newRecipeId,
