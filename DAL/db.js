@@ -333,13 +333,15 @@ const recipesAPI = {
   async addImages(recipeId, imageURLs) {
     try {
       const result = [];
+      console.log('INSIDE ADD IMAGES')
       imageURLs.forEach(async (url) => {
         const queryResult = await promisePool.execute(
           "INSERT INTO images\
           (recipe_id, url)\
           VALUES (?,?)",
           [recipeId, url]
-        );
+          );
+          console.log('AFTER ADD IMAGES')
         result.push(queryResult);
       });
       return result;

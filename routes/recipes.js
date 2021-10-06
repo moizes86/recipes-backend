@@ -115,7 +115,14 @@ router.post(
           }
 
           const awsImagesURLs = awsFilesData.map((file) => file.key);
+          console.log('awsImagesURLs');
+          console.log(awsImagesURLs);
+
           const devModeImagesURLs = req.files.map((file) => "http://localhost:3100/" + file.path);
+          console.log(devModeImagesURLs);
+          console.log('devModeImagesURLs');
+
+          console.log('ADD IMAGES START');
 
           await recipesAPI.addImages(
             newRecipeId,
@@ -174,7 +181,6 @@ router.put("/edit-recipe", upload.array("images"), jsonifyData, validateData, as
 
     // Images
     const imageUrlsToBeDeleted = await recipesAPI.deleteImages(recipe_id, images);
-    // imageUrlsToBeDeleted.forEach((url) => fs.unlink("public/images/" + url, (err, result) => {}));
     for (const url of imageUrlsToBeDeleted) {
       fs.unlink("public/images/" + url, (err, result) => {});
       deleteFile(url);
