@@ -34,7 +34,7 @@ router.post("/login", validateData, async (req, res) => {
     const { email, password } = req.body;
 
     const user = await usersAPI.login(email, password);
-    const accessToken = jwt.sign({ email }, "verificationKey");
+    const accessToken = jwt.sign({ email, password }, "verificationKey");
 
     return res.status(200).json({ message: "Login successful", payload: user, accessToken });
   } catch (e) {
@@ -55,11 +55,6 @@ router.post("/verify", validateData, async (req, res) => {
 router.get("/login/:token", verifyWithJwt, async (req, res) => {
   const [user] = await usersAPI.getUser(req.data.email);
   return res.status(200).json({ payload: user });
-});
-
-router.post("/logout", async (req, res) => {
-  res.clearCookie("user");
-  res.status(200).send("Logged out");
 });
 
 /* Update user's details */
