@@ -32,9 +32,8 @@ const jsonifyData = (req, res, next) => {
 };
 
 const verifyWithJwt = (req, res, next) => {
-  const authHeader = req.headers.token;
-  if (authHeader) {
-    const token = authHeader.split(" ")[1];
+  const token = req.params.token;
+  if (token) {
     jwt.verify(token, "verificationKey", (err, data) => {
       if (err) {
         return res.status(403).json({ message: "Invalid token" });

@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { emailer } = require("../emailer");
 const { usersAPI } = require("../DAL/db");
-const { validateData } = require("../utils");
+const { validateData,verifyWithJwt } = require("../utils");
 const jwt = require("jsonwebtoken");
 
 /* GET users listing. */
@@ -35,11 +35,6 @@ router.post("/login", validateData, async (req, res) => {
 
     const user = await usersAPI.login(email, password);
     const accessToken = jwt.sign({ email }, "verificationKey");
-    try {
-      res.cookie("user", user, { httpOnly: true, sameSite: "none" });
-    } catch (err) {
-      console.log(err);
-    }
 
     return res.status(200).json({ message: "Login successful", payload: user, accessToken });
   } catch (e) {
@@ -57,9 +52,9 @@ router.post("/verify", validateData, async (req, res) => {
   }
 });
 
-router.get("/login", async (req, res) => {
-  if (req.cookies.user) return res.status(200).json({ payload: req.cookies.user });
-  return res.status(400).json({ payload: false });
+router.get("/login/:token", verifyWithJwt, async (req, res) => {
+  const [user] = await usersAPI.getUser(req.data.email);
+  return res.status(200).json({ payload: user });
 });
 
 router.post("/logout", async (req, res) => {
@@ -78,5 +73,7 @@ router.put("/update-details", validateData, async (req, res) => {
     res.status(500).json({ err: e.message });
   }
 });
+
+
 
 module.exports = router;

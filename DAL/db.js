@@ -50,6 +50,11 @@ const usersAPI = {
     return user;
   },
 
+  async getUser(email) {
+    const [result] = await promisePool.execute("SELECT * FROM users WHERE email = ?;", [email]);
+    return result;
+  },
+
   async updateDetails(email, username, password) {
     const hash = await generateHash(password);
     try {
@@ -339,7 +344,7 @@ const recipesAPI = {
           (recipe_id, url)\
           VALUES (?,?)",
           [recipeId, url]
-          );
+        );
         result.push(queryResult);
       });
       return result;
